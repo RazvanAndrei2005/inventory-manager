@@ -19,7 +19,7 @@ public class ProductService {
     }
     public ProductResponseDto createProduct(ProductRequestDto productRequestDto) {
       if (productRepository.existsBySku(productRequestDto.getSku())) {
-          throw new RuntimeException("Sku already exists" + productRequestDto.getSku());
+          throw new RuntimeException("Sku already exists " + productRequestDto.getSku());
       }
     Product product = new Product();
     product.setSku(productRequestDto.getSku());
