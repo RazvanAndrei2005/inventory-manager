@@ -6,10 +6,11 @@ import com.inventory.manager.entity.Product;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.ResourceNotFoundException;
 import com.inventory.manager.repository.ProductRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 @Service
 public class ProductService {
@@ -35,13 +36,12 @@ public class ProductService {
         return mapToResponseDto(savedProduct);
     }
 
-    public List<ProductResponseDto> getAllProducts() {
-        List<Product> productList = productRepository.findAll();
-        List<ProductResponseDto> productResponseDtoList = new ArrayList<>();
-        for (Product product : productList) {
-            productResponseDtoList.add(mapToResponseDto(product));
-        }
-        return productResponseDtoList;
+    public Page<ProductResponseDto> getAllProducts(int page,int size,String sortBy,String sortDir) {
+       Sort sort=sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?Sort.by(sortBy).ascending():Sort.by(sortBy).descending();
+        Pageable pageable= PageRequest.of(page,size,sort);
+        Page<Product>productPage=productRepository.findAll(pageable);
+        return productPage.map(this::mapToResponseDto);
+
     }
 
     public ProductResponseDto getProductById(Long id) {
