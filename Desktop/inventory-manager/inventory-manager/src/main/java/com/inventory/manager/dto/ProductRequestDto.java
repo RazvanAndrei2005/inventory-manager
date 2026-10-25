@@ -25,4 +25,6 @@ public class ProductRequestDto {
     @NotNull(message = "Quantity must not be 0")
     @PositiveOrZero
     private Integer stockQuantity;
+    @NotNull(message = "Category ID is required")
+    private Long categoryId;
 }

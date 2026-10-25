@@ -16,7 +16,7 @@ import lombok.Setter;
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
     @Column(nullable = false)
     private String name;
     @Column(unique = true,nullable = false)
@@ -25,5 +25,9 @@ public class Product {
     private Double price;
     @Column(nullable = false)
     private Integer stockQuantity;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
 
 }

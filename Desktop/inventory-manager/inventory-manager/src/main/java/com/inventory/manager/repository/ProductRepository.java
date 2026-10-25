@@ -14,5 +14,8 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     boolean existsBySku(String sku);
     Page<Product> findByNameContainingIgnoreCase(String search, Pageable pageable);
     Page<Product>findByPriceBetween(double minPrice,double maxPrice ,Pageable pageable);
-    List<Product> findByStockQuantityLessThanEqual(Integer threshold);}
+    List<Product> findByStockQuantityLessThanEqual(Integer threshold);
+    Page<Product>findByCategoryId(Long categoryID, Pageable pageable);
+}
+
 

@@ -4,7 +4,10 @@ import com.inventory.manager.dto.ProductRequestDto;
 import com.inventory.manager.dto.ProductResponseDto;
 import com.inventory.manager.service.ProductService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -73,6 +76,11 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<Page<ProductResponseDto>> getProductsByCategory(@PathVariable Long categoryId, @ParameterObject  @PageableDefault(size=10,sort="name") Pageable pageable) {
+        Page<ProductResponseDto>productResponseDtos=productService.getProductByCategoryId(categoryId,pageable);
+        return  ResponseEntity.ok(productResponseDtos);
     }
 
 }

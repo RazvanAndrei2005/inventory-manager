@@ -15,4 +15,5 @@ public class ProductResponseDto {
     private String sku;
     private Double price;
     private Integer stockQuantity;
+    private CategoryResponseDto category;
 }
