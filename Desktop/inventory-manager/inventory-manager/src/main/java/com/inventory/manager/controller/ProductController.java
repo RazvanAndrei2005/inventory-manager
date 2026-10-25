@@ -28,6 +28,32 @@ public class ProductController {
         Page<ProductResponseDto> products=productService.getAllProducts(page,size,sortBy,sortDir);
         return ResponseEntity.status(HttpStatus.OK).body(products);
     }
+    @GetMapping("/search")
+    public ResponseEntity<Page<ProductResponseDto>> searchProductByName(
+            @RequestParam String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Page<ProductResponseDto> result = productService.getProductsByName(name, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(result);
+    }
+    @GetMapping("/filter")
+    public ResponseEntity<Page<ProductResponseDto>> searchProductByPrice(@RequestParam double minValue,
+                                                                         @RequestParam double maxValue,
+                                                                         @RequestParam(defaultValue = "0") int page,
+                                                                         @RequestParam(defaultValue = "10") int size,
+                                                                         @RequestParam(defaultValue = "id") String sortBy,
+                                                                         @RequestParam(defaultValue = "asc") String sortDir){
+        Page<ProductResponseDto>result=productService.filterByPrice(minValue,maxValue,page,size,sortBy,sortDir);
+        return ResponseEntity.ok(result);
+    }
+    @GetMapping("/low-stock")
+    public ResponseEntity<List<ProductResponseDto>> getLowStockProducts(@RequestParam(defaultValue = "5")Integer threshold) {
+        List<ProductResponseDto>list=productService.getLowStockProducts(threshold);
+        return ResponseEntity.ok(list);
+    }
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDto> getProductById(@PathVariable Long id) {
         ProductResponseDto productResponseDto=productService.getProductById(id);

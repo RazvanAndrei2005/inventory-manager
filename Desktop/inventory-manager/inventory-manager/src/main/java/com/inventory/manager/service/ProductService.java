@@ -12,6 +12,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
+
 @Service
 public class ProductService {
 
@@ -49,7 +51,28 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         return mapToResponseDto(product);
     }
-
+    public Page<ProductResponseDto> getProductsByName(String name,int page,int size,String sortBy,String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable= PageRequest.of(page,size,sort);
+        Page<Product>productPage=productRepository.findByNameContainingIgnoreCase(name,pageable);
+        return productPage.map(this::mapToResponseDto);
+    }
+    public Page<ProductResponseDto>filterByPrice(double priceMin,double priceMax,int page,int size,String sortBy,String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable= PageRequest.of(page,size,sort);
+        Page<Product>productPage=productRepository.findByPriceBetween(priceMin,priceMax,pageable);
+        return productPage.map(this::mapToResponseDto);
+    }
+    public List<ProductResponseDto> getLowStockProducts(Integer threshold) {
+        return productRepository.findByStockQuantityLessThanEqual(threshold)
+                .stream()
+                .map(this::mapToResponseDto)
+                .toList();
+    }
     public ProductResponseDto restockProduct(Long id, Integer quantity) {
         if (quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("Quantity to add must be greater than zero!");
