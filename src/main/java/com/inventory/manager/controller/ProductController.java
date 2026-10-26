@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +28,15 @@ public class ProductController {
        return ResponseEntity.status(HttpStatus.CREATED).body(productResponseDto);
     }
     @GetMapping
-    public ResponseEntity<Page<ProductResponseDto>> getAllProducts(@RequestParam(defaultValue="0")int page, @RequestParam(defaultValue = "10")int size, @RequestParam(defaultValue = "id")String sortBy, @RequestParam(defaultValue = "asc")String sortDir) {
-        Page<ProductResponseDto> products=productService.getAllProducts(page,size,sortBy,sortDir);
-        return ResponseEntity.status(HttpStatus.OK).body(products);
+    public ResponseEntity<Page<ProductResponseDto>> getAllProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String sku,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Integer stockQuantity,
+            @ParameterObject @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {        Page<ProductResponseDto> products = productService.getFilteredProducts(name, sku, minPrice, maxPrice, categoryId, stockQuantity, pageable);
+        return ResponseEntity.ok(products);
     }
     @GetMapping("/search")
     public ResponseEntity<Page<ProductResponseDto>> searchProductByName(

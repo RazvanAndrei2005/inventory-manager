@@ -9,9 +9,11 @@ import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.ResourceNotFoundException;
 import com.inventory.manager.repository.CategoryRepository;
 import com.inventory.manager.repository.ProductRepository;
+import com.inventory.manager.specification.ProductSpecification;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 
@@ -51,7 +53,11 @@ public class ProductService {
         return productPage.map(this::mapToResponseDto);
 
     }
-
+    public Page<ProductResponseDto>getFilteredProducts(String name,String sku,Double minPrice,Double maxPrice,Long categoryId,Integer stockQuantity,Pageable pageable) {
+    Specification<Product> spec= ProductSpecification.filterProduct(name,sku,minPrice,maxPrice,categoryId,stockQuantity);
+    Page<Product>productPage=productRepository.findAll(spec,pageable);
+    return productPage.map(this::mapToResponseDto);
+    }
     public ProductResponseDto getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
