@@ -19,11 +19,11 @@ public class ProductRequestDto {
     private String name;
     @NotBlank(message = "A Sku must be introduced")
     private String sku;
-    @NotNull(message = "Price must not be 0")
+    @NotNull(message = "Price is required")
     @Positive(message = "Price must be positive")
     private Double price;
-    @NotNull(message = "Quantity must not be 0")
-    @PositiveOrZero
+    @NotNull(message = "Stock quantity is required")
+    @PositiveOrZero(message = "Stock quantity cannot be negative")
     private Integer stockQuantity;
     @NotNull(message = "Category ID is required")
     private Long categoryId;
