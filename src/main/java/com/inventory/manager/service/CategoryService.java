@@ -40,6 +40,10 @@ public class CategoryService {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
         return mapToCategoryDto(category);
     }
+    public void deleteCategory(Long id) {
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
+        categoryRepository.delete(category);
+    }
 
     public CategoryResponseDto mapToCategoryDto(Category category) {
         CategoryResponseDto categoryResponseDto = new CategoryResponseDto();

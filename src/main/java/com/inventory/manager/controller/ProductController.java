@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,11 +24,13 @@ public class ProductController {
         this.productService = productService;
     }
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ProductResponseDto> createProduct(@Valid @RequestBody ProductRequestDto productRequestDto) {
         ProductResponseDto productResponseDto = productService.createProduct(productRequestDto);
        return ResponseEntity.status(HttpStatus.CREATED).body(productResponseDto);
     }
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<Page<ProductResponseDto>> getAllProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String sku,
@@ -39,6 +42,7 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<Page<ProductResponseDto>> searchProductByName(
             @RequestParam String name,
             @RequestParam(defaultValue = "0") int page,
@@ -50,6 +54,7 @@ public class ProductController {
         return ResponseEntity.ok(result);
     }
     @GetMapping("/filter")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<Page<ProductResponseDto>> searchProductByPrice(@RequestParam double minValue,
                                                                          @RequestParam double maxValue,
                                                                          @RequestParam(defaultValue = "0") int page,
@@ -60,31 +65,37 @@ public class ProductController {
         return ResponseEntity.ok(result);
     }
     @GetMapping("/low-stock")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<List<ProductResponseDto>> getLowStockProducts(@RequestParam(defaultValue = "5")Integer threshold) {
         List<ProductResponseDto>list=productService.getLowStockProducts(threshold);
         return ResponseEntity.ok(list);
     }
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<ProductResponseDto> getProductById(@PathVariable Long id) {
         ProductResponseDto productResponseDto=productService.getProductById(id);
         return ResponseEntity.status(HttpStatus.OK).body(productResponseDto);
     }
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ProductResponseDto> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequestDto productRequestDto) {
         ProductResponseDto productResponseDto = productService.updateProduct(id, productRequestDto);
         return ResponseEntity.status(HttpStatus.OK).body(productResponseDto);
     }
     @PatchMapping("/{id}/restock")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ProductResponseDto> restockProduct(@PathVariable Long id,@RequestParam Integer quantity) {
         ProductResponseDto productResponseDto = productService.restockProduct(id, quantity);
         return ResponseEntity.status(HttpStatus.OK).body(productResponseDto);
     }
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
     @GetMapping("/category/{categoryId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<Page<ProductResponseDto>> getProductsByCategory(@PathVariable Long categoryId, @ParameterObject  @PageableDefault(size=10,sort="name") Pageable pageable) {
         Page<ProductResponseDto>productResponseDtos=productService.getProductByCategoryId(categoryId,pageable);
         return  ResponseEntity.ok(productResponseDtos);

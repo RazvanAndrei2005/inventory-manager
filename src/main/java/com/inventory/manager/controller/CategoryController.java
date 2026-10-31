@@ -6,6 +6,7 @@ import com.inventory.manager.service.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,18 +17,27 @@ public class CategoryController {
     private CategoryService categoryService;
     public CategoryController(CategoryService categoryService) {this.categoryService = categoryService;}
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<CategoryResponseDto>createCategory(@Valid @RequestBody CategoryRequestDto categoryRequestDto) {
         CategoryResponseDto categoryResponseDto = categoryService.createCategory(categoryRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryResponseDto);
     }
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<List<CategoryResponseDto>> getAllCategories() {
         List<CategoryResponseDto> categoryResponseDtoList = categoryService.getAllCategories();
         return ResponseEntity.ok(categoryResponseDtoList);
     }
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<CategoryResponseDto> getCategoryById(@PathVariable Long id) {
         CategoryResponseDto categoryResponseDto = categoryService.getCategoryById(id);
         return ResponseEntity.ok(categoryResponseDto);
+    }
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
+        return ResponseEntity.noContent().build();
     }
 }
