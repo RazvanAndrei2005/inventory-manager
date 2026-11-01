@@ -1,6 +1,5 @@
 package com.inventory.manager.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,10 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class JwtResponseDto {
     private String accessToken;
-    private String tokenType = "Bearer";
+    private String tokenType;
     private String username;
     private String role;
-    public JwtResponseDto(String token){
-        this.accessToken = token;
-    }
 }
