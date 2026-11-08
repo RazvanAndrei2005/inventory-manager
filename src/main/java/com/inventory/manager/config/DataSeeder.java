@@ -14,22 +14,22 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${ADMIN_USERNAME:admin}")
+    @Value("${ADMIN_USERNAME}")
     private String adminUsername;
 
-    @Value("${ADMIN_EMAIL:admin@yahoo.com}")
+    @Value("${ADMIN_EMAIL}")
     private String adminEmail;
 
-    @Value("${ADMIN_PASSWORD:admin123}")
+    @Value("${ADMIN_PASSWORD}")
     private String adminPassword;
 
-    @Value("${MANAGER_USERNAME:manager}")
+    @Value("${MANAGER_USERNAME}")
     private String managerUsername;
 
-    @Value("${MANAGER_EMAIL:manager@yahoo.com}")
+    @Value("${MANAGER_EMAIL}")
     private String managerEmail;
 
-    @Value("${MANAGER_PASSWORD:manager123}")
+    @Value("${MANAGER_PASSWORD}")
     private String managerPassword;
 
     public DataSeeder(UserRepository userRepository, PasswordEncoder passwordEncoder) {
