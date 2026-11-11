@@ -48,31 +48,6 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
-    public ResponseEntity<Page<ProductResponseDto>> searchProductByName(
-            @RequestParam String name,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductResponseDto> result = productService.getProductsByName(name, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/filter")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
-    public ResponseEntity<Page<ProductResponseDto>> searchProductByPrice(
-            @RequestParam double minValue,
-            @RequestParam double maxValue,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductResponseDto> result = productService.filterByPrice(minValue, maxValue, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(result);
-    }
-
     @GetMapping("/low-stock")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<List<ProductResponseDto>> getLowStockProducts(@RequestParam(defaultValue = "5") Integer threshold) {

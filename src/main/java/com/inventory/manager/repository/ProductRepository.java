@@ -24,12 +24,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Page<Product> findAll(Pageable pageable);
 
     @EntityGraph(attributePaths = {"category"})
-    Page<Product> findByNameContainingIgnoreCase(String search, Pageable pageable);
-
-    @EntityGraph(attributePaths = {"category"})
-    Page<Product> findByPriceBetween(double minPrice, double maxPrice, Pageable pageable);
-
-    @EntityGraph(attributePaths = {"category"})
     List<Product> findByStockQuantityLessThanEqual(Integer threshold);
 
     @EntityGraph(attributePaths = {"category"})

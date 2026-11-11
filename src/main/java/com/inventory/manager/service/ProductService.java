@@ -11,9 +11,7 @@ import com.inventory.manager.repository.CategoryRepository;
 import com.inventory.manager.repository.ProductRepository;
 import com.inventory.manager.specification.ProductSpecification;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,13 +47,6 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductResponseDto> getAllProducts(int page, int size, String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return productRepository.findAll(pageable).map(this::mapToResponseDto);
-    }
-
-    @Transactional(readOnly = true)
     public Page<ProductResponseDto> getFilteredProducts(String name, String sku, Double minPrice, Double maxPrice, Long categoryId, Integer minStock, Integer maxStock, Pageable pageable) {
         Specification<Product> spec = ProductSpecification.filterProduct(name, sku, minPrice, maxPrice, categoryId, minStock, maxStock);
         return productRepository.findAll(spec, pageable).map(this::mapToResponseDto);
@@ -66,24 +57,6 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         return mapToResponseDto(product);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<ProductResponseDto> getProductsByName(String name, int page, int size, String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return productRepository.findByNameContainingIgnoreCase(name, pageable).map(this::mapToResponseDto);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<ProductResponseDto> filterByPrice(double priceMin, double priceMax, int page, int size, String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return productRepository.findByPriceBetween(priceMin, priceMax, pageable).map(this::mapToResponseDto);
     }
 
     @Transactional(readOnly = true)
