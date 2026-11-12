@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -38,8 +39,8 @@ public class ProductController {
     public ResponseEntity<Page<ProductResponseDto>> getAllProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String sku,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Integer minStock,
             @RequestParam(required = false) Integer maxStock,

@@ -3,6 +3,8 @@ package com.inventory.manager.specification;
 import com.inventory.manager.entity.Product;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
+
 public class ProductSpecification {
 
     public static Specification<Product> hasName(String name) {
@@ -15,12 +17,12 @@ public class ProductSpecification {
                 cb.equal(root.get("sku"), sku);
     }
 
-    public static Specification<Product> hasMinPrice(Double minPrice) {
+    public static Specification<Product> hasMinPrice(BigDecimal minPrice) {
         return (root, query, cb) ->
                 cb.greaterThanOrEqualTo(root.get("price"), minPrice);
     }
 
-    public static Specification<Product> hasMaxPrice(Double maxPrice) {
+    public static Specification<Product> hasMaxPrice(BigDecimal maxPrice) {
         return (root, query, cb) ->
                 cb.lessThanOrEqualTo(root.get("price"), maxPrice);
     }
@@ -43,8 +45,7 @@ public class ProductSpecification {
     public static Specification<Product> filterProduct(
             String name,
             String sku,
-            Double minPrice,
-            Double maxPrice,
+            BigDecimal minPrice, BigDecimal maxPrice,
             Long categoryId,
             Integer minStock,
             Integer maxStock) {

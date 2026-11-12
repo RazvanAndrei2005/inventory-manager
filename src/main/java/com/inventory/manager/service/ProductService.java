@@ -16,6 +16,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -47,8 +48,7 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductResponseDto> getFilteredProducts(String name, String sku, Double minPrice, Double maxPrice, Long categoryId, Integer minStock, Integer maxStock, Pageable pageable) {
-        Specification<Product> spec = ProductSpecification.filterProduct(name, sku, minPrice, maxPrice, categoryId, minStock, maxStock);
+    public Page<ProductResponseDto> getFilteredProducts(String name, String sku, BigDecimal minPrice, BigDecimal maxPrice, Long categoryId, Integer minStock, Integer maxStock, Pageable pageable){        Specification<Product> spec = ProductSpecification.filterProduct(name, sku, minPrice, maxPrice, categoryId, minStock, maxStock);
         return productRepository.findAll(spec, pageable).map(this::mapToResponseDto);
     }
 
