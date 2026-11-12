@@ -15,6 +15,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -58,8 +59,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                              HttpHeaders headers,
                                                              HttpStatusCode statusCode,
                                                              WebRequest request) {
-        String message = body instanceof ProblemDetail problemDetail && problemDetail.getDetail() != null
-                ? problemDetail.getDetail()
+        String message = ex instanceof ErrorResponse errorResponse && errorResponse.getBody().getDetail() != null
+                ? errorResponse.getBody().getDetail()
                 : "Request could not be processed";
         return ResponseEntity.status(statusCode).headers(headers)
                 .body(dto(statusCode, message, path(request)));
