@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -38,39 +39,14 @@ public class ProductController {
     public ResponseEntity<Page<ProductResponseDto>> getAllProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String sku,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Integer minStock,
             @RequestParam(required = false) Integer maxStock,
             @ParameterObject @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         Page<ProductResponseDto> products = productService.getFilteredProducts(name, sku, minPrice, maxPrice, categoryId, minStock, maxStock, pageable);
         return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
-    public ResponseEntity<Page<ProductResponseDto>> searchProductByName(
-            @RequestParam String name,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductResponseDto> result = productService.getProductsByName(name, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/filter")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
-    public ResponseEntity<Page<ProductResponseDto>> searchProductByPrice(
-            @RequestParam double minValue,
-            @RequestParam double maxValue,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductResponseDto> result = productService.filterByPrice(minValue, maxValue, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/low-stock")
