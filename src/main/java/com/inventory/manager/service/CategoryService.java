@@ -3,16 +3,15 @@ package com.inventory.manager.service;
 import com.inventory.manager.dto.CategoryRequestDto;
 import com.inventory.manager.dto.CategoryResponseDto;
 import com.inventory.manager.entity.Category;
+import com.inventory.manager.exception.ConflictException;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.ResourceNotFoundException;
 import com.inventory.manager.repository.CategoryRepository;
 import com.inventory.manager.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class CategoryService {
@@ -68,7 +67,7 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
         if (productRepository.existsByCategoryId(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot delete category with id " + id + " because it still has associated products");
+            throw new ConflictException("Cannot delete category with id " + id + " because it still has associated products");
         }
         categoryRepository.delete(category);
     }
