@@ -5,6 +5,7 @@ import com.inventory.manager.dto.ProductRequestDto;
 import com.inventory.manager.dto.ProductResponseDto;
 import com.inventory.manager.entity.Category;
 import com.inventory.manager.entity.Product;
+import com.inventory.manager.exception.BadRequestException;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.ResourceNotFoundException;
 import com.inventory.manager.repository.CategoryRepository;
@@ -70,7 +71,7 @@ public class ProductService {
     @Transactional
     public ProductResponseDto restockProduct(Long id, Integer quantity) {
         if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Quantity to add must be greater than zero!");
+            throw new BadRequestException("Quantity to add must be greater than zero!");
         }
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));

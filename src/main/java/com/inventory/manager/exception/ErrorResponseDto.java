@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ErrorResponseDto {
-    private LocalDateTime localDateTime;
+    private LocalDateTime timestamp;
     private int status;
     private String error;
     private String message;
