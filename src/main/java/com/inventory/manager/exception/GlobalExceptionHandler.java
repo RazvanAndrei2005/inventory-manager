@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -148,6 +149,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("Unexpected error on {} {}", request.getMethod(), request.getRequestURI(), e);
         return error(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request);
     }
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponseDto> handleDisabled(DisabledException e, HttpServletRequest request) {
+        return error(HttpStatus.FORBIDDEN, "This account has been disabled", request);
+    }
+
 
 
     private ErrorResponseDto dto(HttpStatusCode status, String message, String path) {

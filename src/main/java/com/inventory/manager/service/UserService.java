@@ -20,6 +20,6 @@ public class UserService {
     public UserResponseDto getCurrentUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRole());
+        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRole(), user.isEnabled());
     }
 }

@@ -3,40 +3,59 @@ package com.inventory.manager.service;
 import com.inventory.manager.dto.UserResponseDto;
 import com.inventory.manager.entity.Role;
 import com.inventory.manager.entity.User;
+import com.inventory.manager.exception.ConflictException;
 import com.inventory.manager.exception.ResourceNotFoundException;
 import com.inventory.manager.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminService {
-    UserRepository userRepository;
+
+    private final UserRepository userRepository;
+
     public AdminService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-    public List<UserResponseDto> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users.stream()
-                .map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRole()))
-                .collect(Collectors.toList());
+
+    @Transactional(readOnly = true)
+    public Page<UserResponseDto> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(this::toDto);
     }
-    public UserResponseDto updateUserRole(Long userId, Role newRole){
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        user.setRole(newRole);
-        User updatedUser = userRepository.save(user);
-        return new UserResponseDto(updatedUser.getId(), updatedUser.getUsername(), updatedUser.getEmail(), updatedUser.getRole());
-    }
-    public void deleteUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        userRepository.delete(user);
-    }
+
+    @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long userId) {
-        User user = userRepository.findById(userId)
+        return toDto(findUser(userId));
+    }
+
+    @Transactional
+    public UserResponseDto updateUserRole(Long currentAdminId, Long userId, Role newRole) {
+        if (userId.equals(currentAdminId)) {
+            throw new ConflictException("You cannot change your own role");
+        }
+        User user = findUser(userId);
+        user.setRole(newRole);
+        return toDto(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserResponseDto updateUserStatus(Long currentAdminId, Long userId, boolean enabled) {
+        if (userId.equals(currentAdminId)) {
+            throw new ConflictException("You cannot change your own account status");
+        }
+        User user = findUser(userId);
+        user.setEnabled(enabled);
+        return toDto(userRepository.save(user));
+    }
+
+    private User findUser(Long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRole());
+    }
+
+    private UserResponseDto toDto(User user) {
+        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRole(), user.isEnabled());
     }
 }
