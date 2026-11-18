@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.jpa.domain.Specification;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,8 +20,9 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @EntityGraph(attributePaths = {"category"})
     Optional<Product> findById(Long id);
 
+    @Override
     @EntityGraph(attributePaths = {"category"})
-    Page<Product> findAll(Pageable pageable);
+    Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 
     @EntityGraph(attributePaths = {"category"})
     List<Product> findByStockQuantityLessThanEqual(Integer threshold);
