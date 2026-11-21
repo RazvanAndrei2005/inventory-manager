@@ -1,5 +1,7 @@
 # 📦 Inventory Manager REST API
 
+
+![Status](https://img.shields.io/badge/Status-In%20Progress-yellow?style=flat-square&logo=github)
 [![CI](https://github.com/RazvanAndrei2005/inventory-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/RazvanAndrei2005/inventory-manager/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
