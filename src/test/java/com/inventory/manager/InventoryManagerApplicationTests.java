@@ -1,14 +1,11 @@
 package com.inventory.manager;
 
+import com.inventory.manager.integration.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class InventoryManagerApplicationTests {
+class InventoryManagerApplicationTests extends AbstractIntegrationTest {
 
 	@Test
 	void contextLoads() {
 	}
-
-
 }

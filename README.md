@@ -1,5 +1,6 @@
 # 📦 Inventory Manager REST API
 
+[![CI](https://github.com/RazvanAndrei2005/inventory-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/RazvanAndrei2005/inventory-manager/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/Status-In%20Progress-yellow?style=for-the-badge&logo=github)
 
 A RESTful backend API built with **Spring Boot 4** for managing products, product categories, and users in an inventory system. It features stateless **JWT authentication**, **role-based authorization**, dynamic product filtering, pagination, optimistic locking, **PostgreSQL with Flyway migrations**, and OpenAPI/Swagger documentation.
