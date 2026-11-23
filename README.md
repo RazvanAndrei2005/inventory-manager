@@ -33,6 +33,7 @@ A RESTful backend API built with **Spring Boot 4** and **Java 25** for managing 
 * **User Profile & Administration**: Authenticated users can inspect their profile (`GET /api/users/me`); admins can list, view, change roles, and enable/disable user accounts (with self-modification guards).
 * **Category Management**: Full CRUD with a guard that blocks deleting a category that still has products assigned (`409 CONFLICT`).
 * **Product Management**: Full CRUD, restocking endpoint (rejects quantities `<= 0`), and low-stock queries.
+* **Stock Movements & Audit Log**: Automatically records `INITIAL_STOCK`, `RESTOCK`, and `ADJUSTMENT` movements on product changes, plus manual adjustments via `POST /api/stock-movements/adjustments` and filtered history queries (`GET /api/stock-movements`).
 * **Dynamic Filtering**: Filter products by name, SKU, price range, category, and stock range using JPA Specifications.
 * **Pagination & Sorting**: Paginated responses via `Pageable`, integrated with Swagger through `@ParameterObject`.
 * **N+1 Prevention**: `@EntityGraph` on product queries.
@@ -51,13 +52,13 @@ Layered architecture under `com.inventory.manager`:
 
 | Package | Contents |
 | --- | --- |
-| `entity` | `User`, `Product`, `Category`, `Role` |
-| `repository` | `UserRepository`, `ProductRepository`, `CategoryRepository` |
+| `entity` | `User`, `Product`, `Category`, `Role`, `StockMovement`, `StockMovementType` |
+| `repository` | `UserRepository`, `ProductRepository`, `CategoryRepository`, `StockMovementRepository` |
 | `dto` | Request/response DTOs for all resources |
-| `service` | `AuthService`, `UserService`, `AdminService`, `ProductService`, `CategoryService` |
-| `controller` | `AuthController`, `UserController`, `AdminController`, `ProductController`, `CategoryController` |
+| `service` | `AuthService`, `UserService`, `AdminService`, `ProductService`, `CategoryService`, `StockMovementService` |
+| `controller` | `AuthController`, `UserController`, `AdminController`, `ProductController`, `CategoryController`, `StockMovementController` |
 | `security` | `SecurityConfig`, `JwtTokenProvider`, `JwtAuthenticationFilter`, `CustomUserDetails`, entry point & access denied handlers |
-| `specification` | `ProductSpecification` (dynamic filtering) |
+| `specification` | `ProductSpecification`, `StockMovementSpecification` (dynamic filtering) |
 | `exception` | `GlobalExceptionHandler`, custom exceptions, `ErrorResponseDto` |
 | `config` | `DataSeeder`, `OpenApiConfig`, `CorsConfig` |
 
@@ -202,6 +203,15 @@ All routes require a valid JWT except `/api/auth/**` and Swagger UI (`/v3/api-do
 
 **Query parameters for `GET /api/products`:** `name`, `sku`, `minPrice`, `maxPrice`, `categoryId`, `minStock`, `maxStock`, plus standard `page`, `size`, and `sort`.
 
+### Stock Movements (`/api/stock-movements`) — ADMIN / MANAGER
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/api/stock-movements` | List stock movements (paginated, sorted by `createdAt` DESC, filterable) |
+| `POST` | `/api/stock-movements/adjustments` | Record a manual stock adjustment (`productId`, `quantityChange`, `reason`) |
+
+**Query parameters for `GET /api/stock-movements`:** `productId`, `type` (`INITIAL_STOCK`, `RESTOCK`, `ADJUSTMENT`, `SALE`), `createdById`, `from` (ISO-8601 instant), `to` (ISO-8601 instant), plus standard `page`, `size`, and `sort`.
+
 ---
 
 ## ⚠️ Error Format
@@ -230,7 +240,7 @@ All errors return a consistent `ErrorResponseDto` structure:
 | Config & secrets hardening, dev/prod/test profiles | ✅ Done |
 | Unit & integration tests (JUnit 5, Mockito, MockMvc, Testcontainers) | ✅ Done |
 | GitHub Actions CI (Java 25) | ✅ Done |
-| Stock movements | 🔜 Planned |
+| Stock movements | ✅ Done |
 | Orders | 🔜 Planned |
 | Refresh tokens | 🔜 Planned |
 
@@ -240,12 +250,11 @@ All errors return a consistent `ErrorResponseDto` structure:
 
 In order of priority:
 
-1. **Stock movements** – track every stock change (restock, sale, adjustment)
-2. **Orders** – order creation and stock deduction
-3. **Refresh tokens** – shorter-lived access tokens with refresh flow
-4. **Extras** – Redis caching, mail alerts, CSV/PDF export, image upload
-5. **Frontend** – Next.js client
-6. **Deployment** – containerized app and cloud deployment
+1. **Orders** – order creation and stock deduction
+2. **Refresh tokens** – shorter-lived access tokens with refresh flow
+3. **Extras** – Redis caching, mail alerts, CSV/PDF export, image upload
+4. **Frontend** – Next.js client
+5. **Deployment** – containerized app and cloud deployment
 
 ---
 
