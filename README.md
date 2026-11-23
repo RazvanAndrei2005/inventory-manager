@@ -33,7 +33,8 @@ A RESTful backend API built with **Spring Boot 4** and **Java 25** for managing 
 * **User Profile & Administration**: Authenticated users can inspect their profile (`GET /api/users/me`); admins can list, view, change roles, and enable/disable user accounts (with self-modification guards).
 * **Category Management**: Full CRUD with a guard that blocks deleting a category that still has products assigned (`409 CONFLICT`).
 * **Product Management**: Full CRUD, restocking endpoint (rejects quantities `<= 0`), and low-stock queries.
-* **Stock Movements & Audit Log**: Automatically records `INITIAL_STOCK`, `RESTOCK`, and `ADJUSTMENT` movements on product changes, plus manual adjustments via `POST /api/stock-movements/adjustments` and filtered history queries (`GET /api/stock-movements`).
+* **Stock Movements & Audit Log**: Automatically records `INITIAL_STOCK`, `RESTOCK`, `SALE`, and `ADJUSTMENT` movements on product/order changes, plus manual adjustments via `POST /api/stock-movements/adjustments` and filtered history queries (`GET /api/stock-movements`).
+* **Order Management**: Create orders with automatic stock deduction and purchase-time price capture, enforce the status flow (`PENDING` → `CONFIRMED` → `SHIPPED` → `DELIVERED`, or `CANCELLED`), and restore stock on cancellation.
 * **Dynamic Filtering**: Filter products by name, SKU, price range, category, and stock range using JPA Specifications.
 * **Pagination & Sorting**: Paginated responses via `Pageable`, integrated with Swagger through `@ParameterObject`.
 * **N+1 Prevention**: `@EntityGraph` on product queries.
@@ -52,11 +53,11 @@ Layered architecture under `com.inventory.manager`:
 
 | Package | Contents |
 | --- | --- |
-| `entity` | `User`, `Product`, `Category`, `Role`, `StockMovement`, `StockMovementType` |
-| `repository` | `UserRepository`, `ProductRepository`, `CategoryRepository`, `StockMovementRepository` |
+| `entity` | `User`, `Product`, `Category`, `Role`, `StockMovement`, `StockMovementType`, `Order`, `OrderItem`, `OrderStatus` |
+| `repository` | `UserRepository`, `ProductRepository`, `CategoryRepository`, `StockMovementRepository`, `OrderRepository`, `OrderItemRepository` |
 | `dto` | Request/response DTOs for all resources |
-| `service` | `AuthService`, `UserService`, `AdminService`, `ProductService`, `CategoryService`, `StockMovementService` |
-| `controller` | `AuthController`, `UserController`, `AdminController`, `ProductController`, `CategoryController`, `StockMovementController` |
+| `service` | `AuthService`, `UserService`, `AdminService`, `ProductService`, `CategoryService`, `StockMovementService`, `OrderService` |
+| `controller` | `AuthController`, `UserController`, `AdminController`, `ProductController`, `CategoryController`, `StockMovementController`, `OrderController` |
 | `security` | `SecurityConfig`, `JwtTokenProvider`, `JwtAuthenticationFilter`, `CustomUserDetails`, entry point & access denied handlers |
 | `specification` | `ProductSpecification`, `StockMovementSpecification` (dynamic filtering) |
 | `exception` | `GlobalExceptionHandler`, custom exceptions, `ErrorResponseDto` |
@@ -212,6 +213,17 @@ All routes require a valid JWT except `/api/auth/**` and Swagger UI (`/v3/api-do
 
 **Query parameters for `GET /api/stock-movements`:** `productId`, `type` (`INITIAL_STOCK`, `RESTOCK`, `ADJUSTMENT`, `SALE`), `createdById`, `from` (ISO-8601 instant), `to` (ISO-8601 instant), plus standard `page`, `size`, and `sort`.
 
+### Orders (`/api/orders`)
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/api/orders` | Create an order (deducts stock, captures unit prices, records `SALE` movements) |
+| `GET` | `/api/orders/my` | List the authenticated user's orders (paginated, optional `status` filter) |
+| `GET` | `/api/orders` | List all orders (`ADMIN` / `MANAGER`, paginated, optional `status` filter) |
+| `GET` | `/api/orders/{id}` | Get order by ID (owner or `ADMIN` / `MANAGER`) |
+| `PATCH` | `/api/orders/{id}/status` | Advance order status (`ADMIN` / `MANAGER`; rejects invalid transitions) |
+| `POST` | `/api/orders/{id}/cancel` | Cancel a `PENDING` or `CONFIRMED` order (owner or `ADMIN` / `MANAGER`; restores stock) |
+
 ---
 
 ## ⚠️ Error Format
@@ -241,7 +253,7 @@ All errors return a consistent `ErrorResponseDto` structure:
 | Unit & integration tests (JUnit 5, Mockito, MockMvc, Testcontainers) | ✅ Done |
 | GitHub Actions CI (Java 25) | ✅ Done |
 | Stock movements | ✅ Done |
-| Orders | 🔜 Planned |
+| Orders | ✅ Done |
 | Refresh tokens | 🔜 Planned |
 
 ---
@@ -250,11 +262,10 @@ All errors return a consistent `ErrorResponseDto` structure:
 
 In order of priority:
 
-1. **Orders** – order creation and stock deduction
-2. **Refresh tokens** – shorter-lived access tokens with refresh flow
-3. **Extras** – Redis caching, mail alerts, CSV/PDF export, image upload
-4. **Frontend** – Next.js client
-5. **Deployment** – containerized app and cloud deployment
+1. **Refresh tokens** – shorter-lived access tokens with refresh flow
+2. **Extras** – Redis caching, mail alerts, CSV/PDF export, image upload
+3. **Frontend** – Next.js client
+4. **Deployment** – containerized app and cloud deployment
 
 ---
 
