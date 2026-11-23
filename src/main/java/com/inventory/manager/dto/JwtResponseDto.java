@@ -11,7 +11,13 @@ import lombok.Setter;
 @AllArgsConstructor
 public class JwtResponseDto {
     private String accessToken;
+    private String refreshToken;
     private String tokenType;
+    private Long expiresIn;
     private String username;
     private String role;
+
+    public JwtResponseDto(String accessToken, String tokenType, String username, String role) {
+        this(accessToken, null, tokenType, null, username, role);
+    }
 }

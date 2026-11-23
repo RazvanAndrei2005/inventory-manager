@@ -99,6 +99,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return error(HttpStatus.UNAUTHORIZED, "Invalid username or password", request);
     }
 
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidToken(InvalidTokenException e, HttpServletRequest request) {
+        return error(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponseDto> handleAuthentication(AuthenticationException e, HttpServletRequest request) {
         return error(HttpStatus.UNAUTHORIZED, "Authentication is required to access this resource", request);
