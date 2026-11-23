@@ -3,6 +3,7 @@ package com.inventory.manager.integration;
 import com.inventory.manager.dto.LoginRequestDto;
 import com.inventory.manager.dto.RegisterRequestDto;
 import com.inventory.manager.repository.CategoryRepository;
+import com.inventory.manager.repository.OrderRepository;
 import com.inventory.manager.repository.ProductRepository;
 import com.inventory.manager.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,9 @@ public abstract class AbstractIntegrationTest {
     protected ObjectMapper objectMapper;
 
     @Autowired
+    protected OrderRepository orderRepository;
+
+    @Autowired
     protected ProductRepository productRepository;
 
     @Autowired
@@ -54,6 +58,7 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
+        orderRepository.deleteAll();
         productRepository.deleteAll();
         categoryRepository.deleteAll();
         userRepository.findAll().stream()
