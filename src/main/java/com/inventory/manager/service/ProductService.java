@@ -5,6 +5,7 @@ import com.inventory.manager.dto.ProductRequestDto;
 import com.inventory.manager.dto.ProductResponseDto;
 import com.inventory.manager.entity.Category;
 import com.inventory.manager.entity.Product;
+import com.inventory.manager.entity.StockMovementType;
 import com.inventory.manager.exception.BadRequestException;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.ResourceNotFoundException;
@@ -25,10 +26,14 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final StockMovementService stockMovementService;
 
-    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    public ProductService(ProductRepository productRepository,
+                          CategoryRepository categoryRepository,
+                          StockMovementService stockMovementService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.stockMovementService = stockMovementService;
     }
 
     @Transactional
@@ -45,6 +50,15 @@ public class ProductService {
         product.setStockQuantity(productRequestDto.getStockQuantity());
         product.setCategory(category);
         Product savedProduct = productRepository.save(product);
+        if (savedProduct.getStockQuantity() > 0) {
+            stockMovementService.recordMovementForCurrentUser(
+                    savedProduct,
+                    StockMovementType.INITIAL_STOCK,
+                    savedProduct.getStockQuantity(),
+                    savedProduct.getStockQuantity(),
+                    "Initial stock"
+            );
+        }
         return mapToResponseDto(savedProduct);
     }
 
@@ -77,6 +91,13 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         product.setStockQuantity(product.getStockQuantity() + quantity);
         productRepository.save(product);
+        stockMovementService.recordMovementForCurrentUser(
+                product,
+                StockMovementType.RESTOCK,
+                quantity,
+                product.getStockQuantity(),
+                "Product restock"
+        );
         return mapToResponseDto(product);
     }
 
@@ -90,12 +111,23 @@ public class ProductService {
         }
         Category category = categoryRepository.findById(productRequestDto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + productRequestDto.getCategoryId()));
+        int previousStock = product.getStockQuantity();
         product.setName(productRequestDto.getName());
         product.setSku(productRequestDto.getSku());
         product.setPrice(productRequestDto.getPrice());
         product.setStockQuantity(productRequestDto.getStockQuantity());
         product.setCategory(category);
         Product updatedProduct = productRepository.save(product);
+        int stockDelta = updatedProduct.getStockQuantity() - previousStock;
+        if (stockDelta != 0) {
+            stockMovementService.recordMovementForCurrentUser(
+                    updatedProduct,
+                    StockMovementType.ADJUSTMENT,
+                    stockDelta,
+                    updatedProduct.getStockQuantity(),
+                    "Product update"
+            );
+        }
         return mapToResponseDto(updatedProduct);
     }
 

@@ -4,6 +4,7 @@ import com.inventory.manager.dto.ProductRequestDto;
 import com.inventory.manager.dto.ProductResponseDto;
 import com.inventory.manager.entity.Category;
 import com.inventory.manager.entity.Product;
+import com.inventory.manager.entity.StockMovementType;
 import com.inventory.manager.exception.BadRequestException;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.ResourceNotFoundException;
@@ -41,6 +42,9 @@ class ProductServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
+    @Mock
+    private StockMovementService stockMovementService;
+
     @InjectMocks
     private ProductService productService;
 
@@ -69,6 +73,23 @@ class ProductServiceTest {
         assertThat(result.getPrice()).isEqualByComparingTo("999.99");
         assertThat(result.getStockQuantity()).isEqualTo(15);
         assertThat(result.getCategory().getId()).isEqualTo(1L);
+        verify(stockMovementService).recordMovementForCurrentUser(
+                saved, StockMovementType.INITIAL_STOCK, 15, 15, "Initial stock");
+    }
+
+    @Test
+    void createProduct_doesNotRecordMovement_whenInitialStockIsZero() {
+        Category category = sampleCategory();
+        ProductRequestDto request = new ProductRequestDto("Laptop", "SKU-001", new BigDecimal("999.99"), 0, 1L);
+        Product saved = new Product(10L, "Laptop", "SKU-001", new BigDecimal("999.99"), 0, 0L, category);
+
+        when(productRepository.existsBySku("SKU-001")).thenReturn(false);
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(productRepository.save(any(Product.class))).thenReturn(saved);
+
+        productService.createProduct(request);
+
+        verify(stockMovementService, never()).recordMovementForCurrentUser(any(), any(), any(Integer.class), any(Integer.class), any());
     }
 
     @Test
@@ -149,6 +170,8 @@ class ProductServiceTest {
 
         assertThat(result.getStockQuantity()).isEqualTo(20);
         verify(productRepository).save(product);
+        verify(stockMovementService).recordMovementForCurrentUser(
+                product, StockMovementType.RESTOCK, 5, 20, "Product restock");
     }
 
     @Test
@@ -178,6 +201,23 @@ class ProductServiceTest {
         assertThat(result.getName()).isEqualTo("Laptop Pro");
         assertThat(result.getPrice()).isEqualByComparingTo("1299.00");
         assertThat(result.getStockQuantity()).isEqualTo(20);
+        verify(stockMovementService).recordMovementForCurrentUser(
+                existing, StockMovementType.ADJUSTMENT, 5, 20, "Product update");
+    }
+
+    @Test
+    void updateProduct_doesNotRecordMovement_whenStockUnchanged() {
+        Category category = sampleCategory();
+        Product existing = sampleProduct(category);
+        ProductRequestDto request = new ProductRequestDto("Laptop Pro", "SKU-001", new BigDecimal("1299.00"), 15, 1L);
+
+        when(productRepository.findById(10L)).thenReturn(Optional.of(existing));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(productRepository.save(existing)).thenReturn(existing);
+
+        productService.updateProduct(10L, request);
+
+        verify(stockMovementService, never()).recordMovementForCurrentUser(any(), any(), any(Integer.class), any(Integer.class), any());
     }
 
     @Test
