@@ -34,7 +34,7 @@ public class RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = {InvalidTokenException.class, DisabledException.class})
     public RefreshToken rotateRefreshToken(String tokenValue) {
         RefreshToken existing = refreshTokenRepository.findByToken(tokenValue)
                 .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));

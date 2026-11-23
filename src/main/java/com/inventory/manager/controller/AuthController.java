@@ -2,8 +2,8 @@ package com.inventory.manager.controller;
 
 import com.inventory.manager.dto.JwtResponseDto;
 import com.inventory.manager.dto.LoginRequestDto;
+import com.inventory.manager.dto.RefreshTokenRequestDto;
 import com.inventory.manager.dto.RegisterRequestDto;
-import com.inventory.manager.dto.UserResponseDto;
 import com.inventory.manager.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -16,19 +16,33 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
     private final AuthService authService;
+
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
+
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterRequestDto registerRequestDto){
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterRequestDto registerRequestDto) {
         authService.register(registerRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body("User was created Successfully");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtResponseDto> loginUser(@Valid @RequestBody LoginRequestDto loginRequestDto){
+    public ResponseEntity<JwtResponseDto> loginUser(@Valid @RequestBody LoginRequestDto loginRequestDto) {
         JwtResponseDto jwtResponseDto = authService.login(loginRequestDto);
         return ResponseEntity.ok(jwtResponseDto);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtResponseDto> refreshToken(@Valid @RequestBody RefreshTokenRequestDto request) {
+        return ResponseEntity.ok(authService.refreshToken(request));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequestDto request) {
+        authService.logout(request);
+        return ResponseEntity.noContent().build();
     }
 }

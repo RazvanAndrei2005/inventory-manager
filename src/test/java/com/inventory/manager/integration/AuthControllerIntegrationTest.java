@@ -1,6 +1,7 @@
 package com.inventory.manager.integration;
 
 import com.inventory.manager.dto.LoginRequestDto;
+import com.inventory.manager.dto.RefreshTokenRequestDto;
 import com.inventory.manager.dto.RegisterRequestDto;
 import com.inventory.manager.entity.Role;
 import com.inventory.manager.entity.User;
@@ -8,7 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import tools.jackson.databind.JsonNode;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -77,7 +80,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void login_returns200WithJwt_whenCredentialsAreValid() throws Exception {
+    void login_returns200WithJwtAndRefreshToken_whenCredentialsAreValid() throws Exception {
         LoginRequestDto request = new LoginRequestDto("admin", "admin123");
 
         mockMvc.perform(post("/api/auth/login")
@@ -85,7 +88,9 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken", notNullValue()))
+                .andExpect(jsonPath("$.refreshToken", notNullValue()))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.expiresIn").value(900000))
                 .andExpect(jsonPath("$.username").value("admin"))
                 .andExpect(jsonPath("$.role").value("ROLE_ADMIN"));
     }
@@ -118,5 +123,59 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403));
+    }
+
+    @Test
+    void refresh_rotatesTokens_andDetectsReuse() throws Exception {
+        String loginBody = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequestDto("admin", "admin123"))))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String refreshToken1 = objectMapper.readTree(loginBody).get("refreshToken").asString();
+
+        // 1. Valid refresh rotates token
+        String refreshBody = mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RefreshTokenRequestDto(refreshToken1))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken", notNullValue()))
+                .andExpect(jsonPath("$.refreshToken", notNullValue()))
+                .andExpect(jsonPath("$.expiresIn").value(900000))
+                .andReturn().getResponse().getContentAsString();
+        JsonNode refreshedJson = objectMapper.readTree(refreshBody);
+        String refreshToken2 = refreshedJson.get("refreshToken").asString();
+        assertThat(refreshToken2).isNotEqualTo(refreshToken1);
+
+        // 2. Reusing old refreshToken1 returns 401 and revokes refreshToken2
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RefreshTokenRequestDto(refreshToken1))))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RefreshTokenRequestDto(refreshToken2))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void logout_revokesRefreshToken_andBlocksSubsequentRefresh() throws Exception {
+        String loginBody = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequestDto("admin", "admin123"))))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String refreshToken = objectMapper.readTree(loginBody).get("refreshToken").asString();
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RefreshTokenRequestDto(refreshToken))))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RefreshTokenRequestDto(refreshToken))))
+                .andExpect(status().isUnauthorized());
     }
 }
