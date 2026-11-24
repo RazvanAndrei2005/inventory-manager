@@ -2,7 +2,9 @@ package com.inventory.manager.service;
 
 import com.inventory.manager.dto.JwtResponseDto;
 import com.inventory.manager.dto.LoginRequestDto;
+import com.inventory.manager.dto.RefreshTokenRequestDto;
 import com.inventory.manager.dto.RegisterRequestDto;
+import com.inventory.manager.entity.RefreshToken;
 import com.inventory.manager.entity.Role;
 import com.inventory.manager.entity.User;
 import com.inventory.manager.exception.DuplicateResourceException;
@@ -22,6 +24,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +48,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     @InjectMocks
     private AuthService authService;
@@ -104,15 +111,20 @@ class AuthServiceTest {
         CustomUserDetails userDetails = new CustomUserDetails(user);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
+        RefreshToken refreshToken = new RefreshToken(10L, "refresh-123", user, Instant.now().plusSeconds(3600), false, Instant.now());
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
         when(jwtTokenProvider.generateToken(authentication)).thenReturn("jwt-token-123");
+        when(jwtTokenProvider.getJwtExpirationInMs()).thenReturn(900000L);
+        when(refreshTokenService.createRefreshToken(user)).thenReturn(refreshToken);
 
         JwtResponseDto response = authService.login(request);
 
         assertThat(response.getAccessToken()).isEqualTo("jwt-token-123");
+        assertThat(response.getRefreshToken()).isEqualTo("refresh-123");
         assertThat(response.getTokenType()).isEqualTo("Bearer");
+        assertThat(response.getExpiresIn()).isEqualTo(900000L);
         assertThat(response.getUsername()).isEqualTo("john");
         assertThat(response.getRole()).isEqualTo("ROLE_USER");
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(authentication);
@@ -126,5 +138,29 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void refreshToken_rotatesAndReturnsNewJwtResponseDto() {
+        User user = new User(1L, "john", "john@example.com", "encoded", Role.ROLE_USER, true);
+        RefreshToken rotated = new RefreshToken(11L, "refresh-456", user, Instant.now().plusSeconds(3600), false, Instant.now());
+
+        when(refreshTokenService.rotateRefreshToken("refresh-123")).thenReturn(rotated);
+        when(jwtTokenProvider.generateTokenFromUsername("john")).thenReturn("new-jwt-456");
+        when(jwtTokenProvider.getJwtExpirationInMs()).thenReturn(900000L);
+
+        JwtResponseDto response = authService.refreshToken(new RefreshTokenRequestDto("refresh-123"));
+
+        assertThat(response.getAccessToken()).isEqualTo("new-jwt-456");
+        assertThat(response.getRefreshToken()).isEqualTo("refresh-456");
+        assertThat(response.getExpiresIn()).isEqualTo(900000L);
+        assertThat(response.getUsername()).isEqualTo("john");
+        assertThat(response.getRole()).isEqualTo("ROLE_USER");
+    }
+
+    @Test
+    void logout_revokesRefreshToken() {
+        authService.logout(new RefreshTokenRequestDto("refresh-123"));
+        verify(refreshTokenService).revokeRefreshToken("refresh-123");
     }
 }

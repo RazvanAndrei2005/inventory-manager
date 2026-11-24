@@ -5,6 +5,7 @@ import com.inventory.manager.dto.RegisterRequestDto;
 import com.inventory.manager.repository.CategoryRepository;
 import com.inventory.manager.repository.OrderRepository;
 import com.inventory.manager.repository.ProductRepository;
+import com.inventory.manager.repository.RefreshTokenRepository;
 import com.inventory.manager.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,9 @@ public abstract class AbstractIntegrationTest {
     protected ObjectMapper objectMapper;
 
     @Autowired
+    protected RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
     protected OrderRepository orderRepository;
 
     @Autowired
@@ -58,6 +62,7 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
+        refreshTokenRepository.deleteAll();
         orderRepository.deleteAll();
         productRepository.deleteAll();
         categoryRepository.deleteAll();

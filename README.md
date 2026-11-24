@@ -29,7 +29,7 @@ A RESTful backend API built with **Spring Boot 4** and **Java 25** for managing 
 
 ## ✨ Key Features
 
-* **Authentication & Authorization**: Register and log in to receive a JWT; access is controlled by roles (`ROLE_ADMIN`, `ROLE_MANAGER`, `ROLE_USER`) using `@PreAuthorize`.
+* **Authentication & Authorization**: Register and log in to receive a 15-minute JWT access token and a 7-day refresh token (`POST /api/auth/refresh` for token rotation with reuse detection, `POST /api/auth/logout` for revocation); access is controlled by roles (`ROLE_ADMIN`, `ROLE_MANAGER`, `ROLE_USER`) using `@PreAuthorize`.
 * **User Profile & Administration**: Authenticated users can inspect their profile (`GET /api/users/me`); admins can list, view, change roles, and enable/disable user accounts (with self-modification guards).
 * **Category Management**: Full CRUD with a guard that blocks deleting a category that still has products assigned (`409 CONFLICT`).
 * **Product Management**: Full CRUD, restocking endpoint (rejects quantities `<= 0`), and low-stock queries.
@@ -53,10 +53,10 @@ Layered architecture under `com.inventory.manager`:
 
 | Package | Contents |
 | --- | --- |
-| `entity` | `User`, `Product`, `Category`, `Role`, `StockMovement`, `StockMovementType`, `Order`, `OrderItem`, `OrderStatus` |
-| `repository` | `UserRepository`, `ProductRepository`, `CategoryRepository`, `StockMovementRepository`, `OrderRepository`, `OrderItemRepository` |
+| `entity` | `User`, `Product`, `Category`, `Role`, `StockMovement`, `StockMovementType`, `Order`, `OrderItem`, `OrderStatus`, `RefreshToken` |
+| `repository` | `UserRepository`, `ProductRepository`, `CategoryRepository`, `StockMovementRepository`, `OrderRepository`, `OrderItemRepository`, `RefreshTokenRepository` |
 | `dto` | Request/response DTOs for all resources |
-| `service` | `AuthService`, `UserService`, `AdminService`, `ProductService`, `CategoryService`, `StockMovementService`, `OrderService` |
+| `service` | `AuthService`, `RefreshTokenService`, `UserService`, `AdminService`, `ProductService`, `CategoryService`, `StockMovementService`, `OrderService` |
 | `controller` | `AuthController`, `UserController`, `AdminController`, `ProductController`, `CategoryController`, `StockMovementController`, `OrderController` |
 | `security` | `SecurityConfig`, `JwtTokenProvider`, `JwtAuthenticationFilter`, `CustomUserDetails`, entry point & access denied handlers |
 | `specification` | `ProductSpecification`, `StockMovementSpecification` (dynamic filtering) |
@@ -92,7 +92,8 @@ The application reads its secrets and database settings from environment variabl
 | `MANAGER_EMAIL` | Seeded manager email | `manager@example.com` |
 | `MANAGER_PASSWORD` | Seeded manager password | `change-me` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed CORS origins | `http://localhost:3000` |
-| `JWT_EXPIRATION_MS` | *(Optional)* Access token lifetime in milliseconds | `3600000` (1 hour) |
+| `JWT_EXPIRATION_MS` | *(Optional)* Access token lifetime in milliseconds | `900000` (15 minutes) |
+| `JWT_REFRESH_EXPIRATION_MS` | *(Optional)* Refresh token lifetime in milliseconds | `604800000` (7 days) |
 | `SPRING_PROFILES_ACTIVE` | *(Optional)* Active Spring profile (`dev`, `prod`, `test`) | `dev` |
 
 ### Installation & Execution
@@ -145,13 +146,15 @@ The API runs on port **8081**.
 All routes require a valid JWT except `/api/auth/**` and Swagger UI (`/v3/api-docs/**`, `/swagger-ui/**`, `/swagger-ui.html`).
 
 1. Register via `POST /api/auth/register` (new users receive `ROLE_USER`), or log in with a seeded account.
-2. Call `POST /api/auth/login` to receive a token (response contains `accessToken`, `tokenType`, `username`, `role`).
-3. Send it with each request:
+2. Call `POST /api/auth/login` to receive `accessToken`, `refreshToken`, `tokenType` (`Bearer`), `expiresIn` (`900000` ms = 15 min), `username`, and `role`.
+3. Send the access token with each request:
    ```
-   Authorization: Bearer <token>
+   Authorization: Bearer <accessToken>
    ```
+4. When the access token expires, call `POST /api/auth/refresh` with `{"refreshToken": "<refreshToken>"}` to rotate and receive a new `accessToken` + `refreshToken`.
+5. Call `POST /api/auth/logout` with `{"refreshToken": "<refreshToken>"}` to revoke the refresh token (`204 No Content`).
 
-> Access tokens are valid for **1 hour** by default (`JWT_EXPIRATION_MS=3600000`). Refresh tokens are planned (see Roadmap).
+> Access tokens are valid for **15 minutes** (`JWT_EXPIRATION_MS=900000`) and refresh tokens for **7 days** (`JWT_REFRESH_EXPIRATION_MS=604800000`). Reusing an already-rotated refresh token revokes all active refresh tokens for that user.
 
 ---
 
@@ -162,7 +165,9 @@ All routes require a valid JWT except `/api/auth/**` and Swagger UI (`/v3/api-do
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `POST` | `/api/auth/register` | Register a new user (unique username/email required) |
-| `POST` | `/api/auth/login` | Log in and receive a JWT, token type, username, and role |
+| `POST` | `/api/auth/login` | Log in and receive `accessToken`, `refreshToken`, `tokenType`, `expiresIn`, `username`, and `role` |
+| `POST` | `/api/auth/refresh` | Rotate a valid refresh token and receive a new `accessToken` + `refreshToken` |
+| `POST` | `/api/auth/logout` | Revoke a refresh token (`204 No Content`) |
 
 ### Users (`/api/users`) — Authenticated
 
@@ -254,7 +259,7 @@ All errors return a consistent `ErrorResponseDto` structure:
 | GitHub Actions CI (Java 25) | ✅ Done |
 | Stock movements | ✅ Done |
 | Orders | ✅ Done |
-| Refresh tokens | 🔜 Planned |
+| Refresh tokens | ✅ Done |
 
 ---
 
@@ -262,10 +267,9 @@ All errors return a consistent `ErrorResponseDto` structure:
 
 In order of priority:
 
-1. **Refresh tokens** – shorter-lived access tokens with refresh flow
-2. **Extras** – Redis caching, mail alerts, CSV/PDF export, image upload
-3. **Frontend** – Next.js client
-4. **Deployment** – containerized app and cloud deployment
+1. **Extras** – Redis caching, mail alerts, CSV/PDF export, image upload
+2. **Frontend** – Next.js client
+3. **Deployment** – containerized app and cloud deployment
 
 ---
 
