@@ -7,9 +7,11 @@ import com.inventory.manager.entity.Category;
 import com.inventory.manager.entity.Product;
 import com.inventory.manager.entity.StockMovementType;
 import com.inventory.manager.exception.BadRequestException;
+import com.inventory.manager.exception.ConflictException;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.ResourceNotFoundException;
 import com.inventory.manager.repository.CategoryRepository;
+import com.inventory.manager.repository.OrderItemRepository;
 import com.inventory.manager.repository.ProductRepository;
 import com.inventory.manager.specification.ProductSpecification;
 import org.springframework.data.domain.Page;
@@ -26,13 +28,16 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final OrderItemRepository orderItemRepository;
     private final StockMovementService stockMovementService;
 
     public ProductService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
+                          OrderItemRepository orderItemRepository,
                           StockMovementService stockMovementService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.orderItemRepository = orderItemRepository;
         this.stockMovementService = stockMovementService;
     }
 
@@ -76,6 +81,9 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductResponseDto> getLowStockProducts(Integer threshold) {
+        if (threshold == null || threshold < 0) {
+            throw new BadRequestException("Threshold must be zero or greater");
+        }
         return productRepository.findByStockQuantityLessThanEqual(threshold)
                 .stream()
                 .map(this::mapToResponseDto)
@@ -135,6 +143,9 @@ public class ProductService {
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
             throw new ResourceNotFoundException("Product not found with id: " + id);
+        }
+        if (orderItemRepository.existsByProductId(id)) {
+            throw new ConflictException("Cannot delete product with id " + id + " because it is referenced by existing orders");
         }
         productRepository.deleteById(id);
     }
