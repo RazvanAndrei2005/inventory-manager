@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -58,7 +59,11 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> createdItems = new ArrayList<>();
 
-        for (OrderItemRequestDto itemReq : request.getItems()) {
+        List<OrderItemRequestDto> sortedItems = request.getItems().stream()
+                .sorted(Comparator.comparing(OrderItemRequestDto::getProductId))
+                .toList();
+
+        for (OrderItemRequestDto itemReq : sortedItems) {
             if (!seenProductIds.add(itemReq.getProductId())) {
                 throw new BadRequestException("Duplicate product ID in order: " + itemReq.getProductId());
             }

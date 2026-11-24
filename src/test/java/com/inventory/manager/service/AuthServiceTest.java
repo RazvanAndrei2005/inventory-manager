@@ -4,7 +4,6 @@ import com.inventory.manager.dto.JwtResponseDto;
 import com.inventory.manager.dto.LoginRequestDto;
 import com.inventory.manager.dto.RefreshTokenRequestDto;
 import com.inventory.manager.dto.RegisterRequestDto;
-import com.inventory.manager.entity.RefreshToken;
 import com.inventory.manager.entity.Role;
 import com.inventory.manager.entity.User;
 import com.inventory.manager.exception.DuplicateResourceException;
@@ -24,8 +23,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -61,8 +58,8 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_savesUserWithEncodedPasswordAndUserRole() {
-        RegisterRequestDto request = new RegisterRequestDto("john", "john@example.com", "secret123");
+    void register_savesUserWithTrimmedUsernameAndLowercasedEmail() {
+        RegisterRequestDto request = new RegisterRequestDto("  john  ", "  John@Example.COM ", "secret123");
         when(userRepository.existsByUsername("john")).thenReturn(false);
         when(userRepository.existsByEmail("john@example.com")).thenReturn(false);
         when(passwordEncoder.encode("secret123")).thenReturn("encoded-secret");
@@ -111,7 +108,7 @@ class AuthServiceTest {
         CustomUserDetails userDetails = new CustomUserDetails(user);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
-        RefreshToken refreshToken = new RefreshToken(10L, "refresh-123", user, Instant.now().plusSeconds(3600), false, Instant.now());
+        RefreshTokenService.IssuedRefreshToken refreshToken = new RefreshTokenService.IssuedRefreshToken("refresh-123", user);
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
@@ -143,7 +140,7 @@ class AuthServiceTest {
     @Test
     void refreshToken_rotatesAndReturnsNewJwtResponseDto() {
         User user = new User(1L, "john", "john@example.com", "encoded", Role.ROLE_USER, true);
-        RefreshToken rotated = new RefreshToken(11L, "refresh-456", user, Instant.now().plusSeconds(3600), false, Instant.now());
+        RefreshTokenService.IssuedRefreshToken rotated = new RefreshTokenService.IssuedRefreshToken("refresh-456", user);
 
         when(refreshTokenService.rotateRefreshToken("refresh-123")).thenReturn(rotated);
         when(jwtTokenProvider.generateTokenFromUsername("john")).thenReturn("new-jwt-456");

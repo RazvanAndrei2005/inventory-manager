@@ -63,9 +63,9 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void register_returns409_whenEmailAlreadyExists() throws Exception {
+    void register_returns409_whenEmailAlreadyExistsWithDifferentCase() throws Exception {
         RegisterRequestDto first = new RegisterRequestDto("userone", "same@example.com", "password123");
-        RegisterRequestDto second = new RegisterRequestDto("usertwo", "same@example.com", "password123");
+        RegisterRequestDto second = new RegisterRequestDto("usertwo", "SAME@Example.com", "password123");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,6 +133,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String refreshToken1 = objectMapper.readTree(loginBody).get("refreshToken").asString();
+        assertThat(refreshTokenRepository.findByToken(refreshToken1)).isEmpty();
 
         // 1. Valid refresh rotates token
         String refreshBody = mockMvc.perform(post("/api/auth/refresh")

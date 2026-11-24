@@ -4,7 +4,6 @@ import com.inventory.manager.dto.JwtResponseDto;
 import com.inventory.manager.dto.LoginRequestDto;
 import com.inventory.manager.dto.RefreshTokenRequestDto;
 import com.inventory.manager.dto.RegisterRequestDto;
-import com.inventory.manager.entity.RefreshToken;
 import com.inventory.manager.entity.User;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.InvalidTokenException;
@@ -45,15 +44,18 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequestDto registerRequestDto) {
-        if (userRepository.existsByUsername(registerRequestDto.getUsername())) {
-            throw new DuplicateResourceException("Username '" + registerRequestDto.getUsername() + "' is already taken");
+        String username = registerRequestDto.getUsername().trim();
+        String email = registerRequestDto.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByUsername(username)) {
+            throw new DuplicateResourceException("Username '" + username + "' is already taken");
         }
-        if (userRepository.existsByEmail(registerRequestDto.getEmail())) {
-            throw new DuplicateResourceException("Email '" + registerRequestDto.getEmail() + "' is already registered");
+        if (userRepository.existsByEmail(email)) {
+            throw new DuplicateResourceException("Email '" + email + "' is already registered");
         }
         User user = new User();
-        user.setUsername(registerRequestDto.getUsername());
-        user.setEmail(registerRequestDto.getEmail());
+        user.setUsername(username);
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(registerRequestDto.getPassword()));
         user.setRole(ROLE_USER);
         userRepository.save(user);
@@ -63,7 +65,7 @@ public class AuthService {
     public JwtResponseDto login(LoginRequestDto loginRequestDto) {
         Authentication authentication = authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(
-                        loginRequestDto.getUsername(),
+                        loginRequestDto.getUsername().trim(),
                         loginRequestDto.getPassword()
                 )
         );
@@ -71,13 +73,13 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateToken(authentication);
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUser());
+        RefreshTokenService.IssuedRefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUser());
         String username = userDetails.getUsername();
         String role = userDetails.getAuthorities().iterator().next().getAuthority();
 
         return new JwtResponseDto(
                 accessToken,
-                refreshToken.getToken(),
+                refreshToken.rawToken(),
                 "Bearer",
                 jwtTokenProvider.getJwtExpirationInMs(),
                 username,
@@ -87,13 +89,13 @@ public class AuthService {
 
     @Transactional(noRollbackFor = {InvalidTokenException.class, DisabledException.class})
     public JwtResponseDto refreshToken(RefreshTokenRequestDto request) {
-        RefreshToken rotated = refreshTokenService.rotateRefreshToken(request.getRefreshToken());
-        User user = rotated.getUser();
+        RefreshTokenService.IssuedRefreshToken rotated = refreshTokenService.rotateRefreshToken(request.getRefreshToken());
+        User user = rotated.user();
         String accessToken = jwtTokenProvider.generateTokenFromUsername(user.getUsername());
 
         return new JwtResponseDto(
                 accessToken,
-                rotated.getToken(),
+                rotated.rawToken(),
                 "Bearer",
                 jwtTokenProvider.getJwtExpirationInMs(),
                 user.getUsername(),

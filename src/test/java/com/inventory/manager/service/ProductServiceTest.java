@@ -6,9 +6,11 @@ import com.inventory.manager.entity.Category;
 import com.inventory.manager.entity.Product;
 import com.inventory.manager.entity.StockMovementType;
 import com.inventory.manager.exception.BadRequestException;
+import com.inventory.manager.exception.ConflictException;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.ResourceNotFoundException;
 import com.inventory.manager.repository.CategoryRepository;
+import com.inventory.manager.repository.OrderItemRepository;
 import com.inventory.manager.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +43,9 @@ class ProductServiceTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private OrderItemRepository orderItemRepository;
 
     @Mock
     private StockMovementService stockMovementService;
@@ -162,6 +167,13 @@ class ProductServiceTest {
     }
 
     @Test
+    void getLowStockProducts_throwsBadRequestException_whenThresholdNegative() {
+        assertThatThrownBy(() -> productService.getLowStockProducts(-1))
+                .isInstanceOf(BadRequestException.class);
+        verify(productRepository, never()).findByStockQuantityLessThanEqual(any());
+    }
+
+    @Test
     void restockProduct_addsQuantity_whenValid() {
         Product product = sampleProduct(sampleCategory());
         when(productRepository.findById(10L)).thenReturn(Optional.of(product));
@@ -236,12 +248,25 @@ class ProductServiceTest {
     }
 
     @Test
-    void deleteProduct_deletes_whenExists() {
+    void deleteProduct_deletes_whenExistsAndNotReferencedByOrders() {
         when(productRepository.existsById(10L)).thenReturn(true);
+        when(orderItemRepository.existsByProductId(10L)).thenReturn(false);
 
         productService.deleteProduct(10L);
 
         verify(productRepository).deleteById(10L);
+    }
+
+    @Test
+    void deleteProduct_throwsConflictException_whenReferencedByOrders() {
+        when(productRepository.existsById(10L)).thenReturn(true);
+        when(orderItemRepository.existsByProductId(10L)).thenReturn(true);
+
+        assertThatThrownBy(() -> productService.deleteProduct(10L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("referenced by existing orders");
+
+        verify(productRepository, never()).deleteById(any());
     }
 
     @Test

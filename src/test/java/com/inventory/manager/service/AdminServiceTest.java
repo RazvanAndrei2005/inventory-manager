@@ -5,6 +5,7 @@ import com.inventory.manager.entity.Role;
 import com.inventory.manager.entity.User;
 import com.inventory.manager.exception.ConflictException;
 import com.inventory.manager.exception.ResourceNotFoundException;
+import com.inventory.manager.repository.RefreshTokenRepository;
 import com.inventory.manager.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,9 @@ class AdminServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @InjectMocks
     private AdminService adminService;
@@ -100,6 +104,7 @@ class AdminServiceTest {
 
         assertThat(result.getEnabled()).isFalse();
         verify(userRepository).save(user);
+        verify(refreshTokenRepository).revokeAllByUserId(2L);
     }
 
     @Test

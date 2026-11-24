@@ -116,6 +116,12 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].sku").value("SKU-C1"));
 
+        mockMvc.perform(get("/api/products/low-stock")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
+                        .param("threshold", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+
         mockMvc.perform(get("/api/products/category/{categoryId}", books.getId())
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
                 .andExpect(status().isOk())

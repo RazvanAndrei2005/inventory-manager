@@ -69,8 +69,8 @@ class OrderServiceTest {
         Product mouse = sampleProduct(11L, "25.50", 20);
 
         OrderRequestDto request = new OrderRequestDto(List.of(
-                new OrderItemRequestDto(10L, 2),
-                new OrderItemRequestDto(11L, 3)
+                new OrderItemRequestDto(11L, 3),
+                new OrderItemRequestDto(10L, 2)
         ));
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -91,7 +91,9 @@ class OrderServiceTest {
         assertThat(response.getStatus()).isEqualTo(OrderStatus.PENDING);
         assertThat(response.getTotalAmount()).isEqualByComparingTo("2076.50");
         assertThat(response.getItems()).hasSize(2);
+        assertThat(response.getItems().get(0).getProductId()).isEqualTo(10L);
         assertThat(response.getItems().get(0).getUnitPrice()).isEqualByComparingTo("1000.00");
+        assertThat(response.getItems().get(1).getProductId()).isEqualTo(11L);
         assertThat(response.getItems().get(1).getLineTotal()).isEqualByComparingTo("76.50");
 
         assertThat(laptop.getStockQuantity()).isEqualTo(3);
