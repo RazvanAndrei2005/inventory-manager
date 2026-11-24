@@ -45,15 +45,18 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequestDto registerRequestDto) {
-        if (userRepository.existsByUsername(registerRequestDto.getUsername())) {
-            throw new DuplicateResourceException("Username '" + registerRequestDto.getUsername() + "' is already taken");
+        String username = registerRequestDto.getUsername().trim();
+        String email = registerRequestDto.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByUsername(username)) {
+            throw new DuplicateResourceException("Username '" + username + "' is already taken");
         }
-        if (userRepository.existsByEmail(registerRequestDto.getEmail())) {
-            throw new DuplicateResourceException("Email '" + registerRequestDto.getEmail() + "' is already registered");
+        if (userRepository.existsByEmail(email)) {
+            throw new DuplicateResourceException("Email '" + email + "' is already registered");
         }
         User user = new User();
-        user.setUsername(registerRequestDto.getUsername());
-        user.setEmail(registerRequestDto.getEmail());
+        user.setUsername(username);
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(registerRequestDto.getPassword()));
         user.setRole(ROLE_USER);
         userRepository.save(user);
@@ -63,7 +66,7 @@ public class AuthService {
     public JwtResponseDto login(LoginRequestDto loginRequestDto) {
         Authentication authentication = authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(
-                        loginRequestDto.getUsername(),
+                        loginRequestDto.getUsername().trim(),
                         loginRequestDto.getPassword()
                 )
         );

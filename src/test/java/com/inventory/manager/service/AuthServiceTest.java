@@ -61,8 +61,8 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_savesUserWithEncodedPasswordAndUserRole() {
-        RegisterRequestDto request = new RegisterRequestDto("john", "john@example.com", "secret123");
+    void register_savesUserWithTrimmedUsernameAndLowercasedEmail() {
+        RegisterRequestDto request = new RegisterRequestDto("  john  ", "  John@Example.COM ", "secret123");
         when(userRepository.existsByUsername("john")).thenReturn(false);
         when(userRepository.existsByEmail("john@example.com")).thenReturn(false);
         when(passwordEncoder.encode("secret123")).thenReturn("encoded-secret");
