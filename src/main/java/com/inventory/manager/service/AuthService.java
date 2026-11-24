@@ -4,7 +4,6 @@ import com.inventory.manager.dto.JwtResponseDto;
 import com.inventory.manager.dto.LoginRequestDto;
 import com.inventory.manager.dto.RefreshTokenRequestDto;
 import com.inventory.manager.dto.RegisterRequestDto;
-import com.inventory.manager.entity.RefreshToken;
 import com.inventory.manager.entity.User;
 import com.inventory.manager.exception.DuplicateResourceException;
 import com.inventory.manager.exception.InvalidTokenException;
@@ -74,13 +73,13 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateToken(authentication);
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUser());
+        RefreshTokenService.IssuedRefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUser());
         String username = userDetails.getUsername();
         String role = userDetails.getAuthorities().iterator().next().getAuthority();
 
         return new JwtResponseDto(
                 accessToken,
-                refreshToken.getToken(),
+                refreshToken.rawToken(),
                 "Bearer",
                 jwtTokenProvider.getJwtExpirationInMs(),
                 username,
@@ -90,13 +89,13 @@ public class AuthService {
 
     @Transactional(noRollbackFor = {InvalidTokenException.class, DisabledException.class})
     public JwtResponseDto refreshToken(RefreshTokenRequestDto request) {
-        RefreshToken rotated = refreshTokenService.rotateRefreshToken(request.getRefreshToken());
-        User user = rotated.getUser();
+        RefreshTokenService.IssuedRefreshToken rotated = refreshTokenService.rotateRefreshToken(request.getRefreshToken());
+        User user = rotated.user();
         String accessToken = jwtTokenProvider.generateTokenFromUsername(user.getUsername());
 
         return new JwtResponseDto(
                 accessToken,
-                rotated.getToken(),
+                rotated.rawToken(),
                 "Bearer",
                 jwtTokenProvider.getJwtExpirationInMs(),
                 user.getUsername(),

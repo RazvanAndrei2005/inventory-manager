@@ -133,6 +133,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String refreshToken1 = objectMapper.readTree(loginBody).get("refreshToken").asString();
+        assertThat(refreshTokenRepository.findByToken(refreshToken1)).isEmpty();
 
         // 1. Valid refresh rotates token
         String refreshBody = mockMvc.perform(post("/api/auth/refresh")

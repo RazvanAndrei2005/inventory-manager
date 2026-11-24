@@ -5,6 +5,7 @@ import com.inventory.manager.entity.Role;
 import com.inventory.manager.entity.User;
 import com.inventory.manager.exception.ConflictException;
 import com.inventory.manager.exception.ResourceNotFoundException;
+import com.inventory.manager.repository.RefreshTokenRepository;
 import com.inventory.manager.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    public AdminService(UserRepository userRepository) {
+    public AdminService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @Transactional(readOnly = true)
@@ -47,7 +50,11 @@ public class AdminService {
         }
         User user = findUser(userId);
         user.setEnabled(enabled);
-        return toDto(userRepository.save(user));
+        User saved = userRepository.save(user);
+        if (!enabled) {
+            refreshTokenRepository.revokeAllByUserId(userId);
+        }
+        return toDto(saved);
     }
 
     private User findUser(Long userId) {
