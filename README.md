@@ -9,13 +9,34 @@ A RESTful backend API built with **Spring Boot 4** and **Java 25** for managing 
 
 ---
 
+## 🌐 Live Deployment
+
+* **Base URL:** `https://inventory-manager-cyfw.onrender.com`
+* **Health Check:** `GET https://inventory-manager-cyfw.onrender.com/api/health` → `{"status":"UP"}`
+* **Hosting:** **Render** (Docker, free tier) + **Neon** (serverless PostgreSQL 16)
+
+> **Cold Start Note:** On Render's free tier, the service spins down after 15 minutes of inactivity. The first request after idle time may take **30–60 seconds** while the container wakes up; subsequent requests respond normally.
+
+---
+
+## 🏛️ Architecture
+
+```mermaid
+flowchart LR
+    Client["Client / Future Next.js Frontend"] -->|HTTPS + JWT| API["Spring Boot 4 API (Render Docker, Java 25)"]
+    API -->|"DATABASE_URL (Pooled JDBC)"| Neon["Neon PostgreSQL 16"]
+    API -->|"DATABASE_URL_UNPOOLED (Flyway V1-V4)"| Neon
+```
+
+---
+
 ## 🛠️ Tech Stack
 
 * **Java**: 25
 * **Framework**: Spring Boot 4.1.1
 * **Security**: Spring Security + JWT (JJWT 0.12.6)
-* **Database**: PostgreSQL 16 (via Docker Compose)
-* **Migrations**: Flyway (`V1__init_schema.sql`), Hibernate set to `ddl-auto=validate`
+* **Database**: PostgreSQL 16 (Neon in production, Docker Compose locally)
+* **Migrations**: Flyway (`V1`–`V4`), Hibernate set to `ddl-auto=validate`
 * **ORM & Persistence**: Spring Data JPA / Hibernate
 * **Validation**: Spring Validation (Jakarta Bean Validation)
 * **Documentation**: SpringDoc OpenAPI 3 (Swagger UI)
@@ -57,11 +78,11 @@ Layered architecture under `com.inventory.manager`:
 | `repository` | `UserRepository`, `ProductRepository`, `CategoryRepository`, `StockMovementRepository`, `OrderRepository`, `OrderItemRepository`, `RefreshTokenRepository` |
 | `dto` | Request/response DTOs for all resources |
 | `service` | `AuthService`, `RefreshTokenService`, `UserService`, `AdminService`, `ProductService`, `CategoryService`, `StockMovementService`, `OrderService` |
-| `controller` | `AuthController`, `UserController`, `AdminController`, `ProductController`, `CategoryController`, `StockMovementController`, `OrderController` |
-| `security` | `SecurityConfig`, `JwtTokenProvider`, `JwtAuthenticationFilter`, `CustomUserDetails`, entry point & access denied handlers |
+| `controller` | `AuthController`, `UserController`, `AdminController`, `ProductController`, `CategoryController`, `StockMovementController`, `OrderController`, `HealthController` |
+| `security` | `SecurityConfig`, `JwtTokenProvider`, `JwtAuthenticationFilter`, `AuthRateLimitFilter`, `CustomUserDetails`, entry point & access denied handlers |
 | `specification` | `ProductSpecification`, `StockMovementSpecification` (dynamic filtering) |
 | `exception` | `GlobalExceptionHandler`, custom exceptions, `ErrorResponseDto` |
-| `config` | `DataSeeder`, `OpenApiConfig`, `CorsConfig` |
+| `config` | `DataSeeder`, `OpenApiConfig`, `CorsConfig`, `NeonDatasourceEnvironmentPostProcessor` |
 
 Database migrations live in `src/main/resources/db/migration`.
 
