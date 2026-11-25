@@ -36,3 +36,7 @@ out/
 .env
 *.env
 application-local.properties
+.neon
+node_modules/
+
+node_modules/
