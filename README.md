@@ -288,8 +288,8 @@ All errors return a consistent `ErrorResponseDto` structure:
 
 In order of priority:
 
-1. **Extras** – Redis caching, mail alerts, CSV/PDF export, image upload
-2. **Frontend** – Next.js client
+1. **Frontend** – Next.js client
+2. **Extras** – Redis caching, mail alerts, CSV/PDF export, image upload
 3. **Deployment** – containerized app and cloud deployment
 
 ---
