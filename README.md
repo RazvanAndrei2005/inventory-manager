@@ -11,9 +11,10 @@ A RESTful backend API built with **Spring Boot 4** and **Java 25** for managing 
 
 ## 🌐 Live Deployment
 
-* **Base URL:** `https://inventory-manager-cyfw.onrender.com`
+* **Frontend (Next.js on Vercel):** `https://inventorymanager-livid.vercel.app`
+* **Backend API (Spring Boot on Render):** `https://inventory-manager-cyfw.onrender.com`
 * **Health Check:** `GET https://inventory-manager-cyfw.onrender.com/api/health` → `{"status":"UP"}`
-* **Hosting:** **Render** (Docker, free tier) + **Neon** (serverless PostgreSQL 16)
+* **Hosting:** **Vercel** (Next.js frontend) + **Render** (Docker, free tier) + **Neon** (serverless PostgreSQL 16)
 
 > **Cold Start Note:** On Render's free tier, the service spins down after 15 minutes of inactivity. The first request after idle time may take **30–60 seconds** while the container wakes up; subsequent requests respond normally.
 
