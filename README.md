@@ -157,6 +157,12 @@ The API runs on port **8081**.
 
 ---
 
+## 🖥️ Frontend Dashboard
+
+![Frontend Dashboard](docs/dashboard.png)
+
+---
+
 ## 📖 Swagger UI
 
 ![Swagger UI](docs/swagger-ui.png)
